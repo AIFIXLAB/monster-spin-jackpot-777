@@ -1,0 +1,554 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Monster Spin Jackpot 777 · Score Checker</title>
+<meta name="description" content="Check the live score of any Monster Spin Jackpot 777 NFT or wallet. 7,777 prize piles on Robinhood Chain.">
+<meta property="og:title" content="Monster Spin Jackpot 777 · Score Checker">
+<meta property="og:description" content="7,777 prize piles spat out by a hungry Monster Slot Machine. Check your score.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Bungee+Shade&family=Nunito:wght@400;600;800&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: a slot-machine cabinet. Marquee header, a reel display for the score, then the prize tray (NFT grid). */
+:root{
+  --bg:#12061f; --bg2:#1d0b33; --panel:#241040; --panel2:#2f1652; --line:#4a2a78;
+  --fg:#fff6e6; --muted:#c7b4e6; --gold:#ffc83d; --gold2:#ff9f1c; --red:#ff3b5c; --green:#3ef08a; --cyan:#41e2ff;
+  --display:"Bungee", Impact, "Arial Black", sans-serif;
+  --shade:"Bungee Shade", "Bungee", Impact, sans-serif;
+  --body:"Nunito", "Segoe UI", system-ui, sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, Menlo, monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.55;
+  background-image:radial-gradient(1200px 600px at 50% -10%, #3a136a 0%, transparent 60%),
+                   radial-gradient(800px 500px at 100% 30%, #2a0d4a 0%, transparent 60%);}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+a{color:var(--gold)}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+button,input{font:inherit}
+:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+
+/* marquee */
+.marquee{display:flex;justify-content:center;gap:10px;padding-block:10px;background:#0b0314;border-bottom:2px solid var(--line);overflow:hidden}
+.bulb{width:10px;height:10px;border-radius:50%;background:#5a3a10;flex:none}
+.bulb.on{background:var(--gold);box-shadow:0 0 10px var(--gold),0 0 20px var(--gold2)}
+nav{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:14px;flex-wrap:wrap}
+.logo{font-family:var(--display);font-size:18px;letter-spacing:.02em;color:var(--fg);text-decoration:none;display:flex;align-items:center;gap:10px}
+.logo b{color:var(--gold)}
+.navlinks{display:flex;gap:8px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:2px solid var(--line);background:var(--panel);color:var(--fg);
+  padding:10px 16px;border-radius:12px;font-weight:800;text-decoration:none;cursor:pointer;transition:transform .12s, background .12s}
+.btn:hover{transform:translateY(-1px);background:var(--panel2)}
+.btn.gold{background:linear-gradient(180deg,var(--gold),var(--gold2));color:#2a0d00;border-color:#ffe08a;box-shadow:0 4px 0 #a5560a, 0 0 24px rgba(255,200,61,.35)}
+.btn.gold:active{transform:translateY(3px);box-shadow:0 1px 0 #a5560a}
+
+/* hero */
+.hero{padding-block:40px 30px;display:grid;grid-template-columns:1.15fr .85fr;gap:36px;align-items:center}
+.eyebrow{font-family:var(--mono);color:var(--cyan);font-size:13px;letter-spacing:.14em;text-transform:uppercase}
+h1{font-family:var(--shade);font-weight:400;font-size:clamp(40px,7vw,84px);line-height:.95;margin:10px 0 14px;color:var(--gold);text-wrap:balance;
+  text-shadow:0 0 30px rgba(255,159,28,.35)}
+h1 span{display:block;font-family:var(--display);color:var(--fg);font-size:.55em;letter-spacing:.02em;text-shadow:none}
+.lede{color:var(--muted);font-size:18px;max-width:58ch;margin:0 0 22px}
+.hero-ctas{display:flex;gap:10px;flex-wrap:wrap}
+.machine{position:relative;background:linear-gradient(180deg,#3b1866,#200b3a);border:4px solid #6b3fb0;border-radius:28px;padding:22px 18px 26px;box-shadow:0 20px 60px rgba(0,0,0,.45), inset 0 0 0 4px #160626}
+.machine .top{font-family:var(--display);text-align:center;color:var(--gold);font-size:22px;margin-bottom:12px}
+.machine .eyes{display:flex;justify-content:center;gap:36px;margin:-4px 0 10px}
+.machine .eye{width:34px;height:34px;border-radius:50%;background:#fff;position:relative;box-shadow:inset 0 -4px 0 #ddd}
+.machine .eye::after{content:"";position:absolute;width:14px;height:14px;border-radius:50%;background:#12061f;top:10px;left:10px;transition:transform .2s}
+.reels{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;background:#0b0314;border-radius:16px;padding:10px;border:3px solid #5a2f95}
+.reel{background:linear-gradient(180deg,#fff,#efe6d6);border-radius:10px;height:110px;overflow:hidden;position:relative;box-shadow:inset 0 8px 14px rgba(0,0,0,.25), inset 0 -8px 14px rgba(0,0,0,.25)}
+.strip{position:absolute;left:0;right:0;top:0;transition:transform 1.4s cubic-bezier(.2,.8,.2,1)}
+.strip div{height:110px;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:58px;color:#d6162f}
+.machine .teeth{display:flex;justify-content:center;gap:6px;margin-top:12px}
+.machine .teeth i{width:18px;height:16px;background:#fff;clip-path:polygon(0 0,100% 0,50% 100%)}
+
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding-block:10px 40px}
+.stat{background:var(--panel);border:2px solid var(--line);border-radius:16px;padding:14px 16px;min-width:0}
+.stat .k{font-family:var(--mono);font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
+.stat .v{font-family:var(--display);font-size:26px;color:var(--fg);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.stat .v small{font-family:var(--body);font-size:13px;color:var(--muted);font-weight:600}
+
+/* checker */
+section{padding-block:28px}
+h2{font-family:var(--display);font-weight:400;font-size:clamp(26px,4vw,40px);margin:0 0 6px;color:var(--fg)}
+.sub{color:var(--muted);margin:0 0 18px;max-width:70ch}
+.checker{background:linear-gradient(180deg,var(--panel),#1b0a31);border:3px solid #6b3fb0;border-radius:24px;padding:20px}
+.tabs{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.tab{background:transparent;border:2px solid var(--line);color:var(--muted);padding:8px 14px;border-radius:999px;font-weight:800;cursor:pointer}
+.tab[aria-selected="true"]{background:var(--gold);border-color:var(--gold);color:#2a0d00}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row input{flex:1 1 280px;min-width:0;background:#0f0520;border:2px solid var(--line);color:var(--fg);border-radius:12px;padding:12px 14px;font-family:var(--mono);font-size:15px}
+.hint{font-size:13px;color:var(--muted);margin-top:8px}
+.msg{margin-top:14px;padding:12px 14px;border-radius:12px;background:#2a0f20;border:2px solid #6e2340;color:#ffd2dc;display:none}
+.msg.info{background:#10223a;border-color:#245a8a;color:#cfe8ff}
+
+.result{margin-top:22px;display:none}
+.scorecard{display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center;background:#0f0520;border:2px solid var(--line);border-radius:20px;padding:18px}
+.big{font-family:var(--display);font-size:clamp(48px,9vw,96px);line-height:1;font-variant-numeric:tabular-nums}
+.big.pos{color:var(--gold);text-shadow:0 0 24px rgba(255,200,61,.4)} .big.neg{color:var(--red)}
+.tier{display:inline-block;font-family:var(--display);font-size:14px;padding:6px 12px;border-radius:999px;margin-bottom:6px}
+.meta-line{color:var(--muted);font-size:14px}
+.meta-line b{color:var(--fg)}
+.kpis{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.kpi{background:var(--panel);border:2px solid var(--line);border-radius:12px;padding:8px 12px;font-size:14px}
+.kpi b{font-family:var(--mono)}
+.toolbar{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:18px 0 10px}
+.toolbar select{background:#0f0520;color:var(--fg);border:2px solid var(--line);border-radius:10px;padding:8px 10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}
+.card{background:var(--panel);border:2px solid var(--line);border-radius:16px;overflow:hidden;display:flex;flex-direction:column;cursor:pointer;transition:transform .12s,border-color .12s}
+.card:hover{transform:translateY(-2px);border-color:var(--gold)}
+.card img{width:100%;aspect-ratio:1;object-fit:cover;background:#0b0314;display:block;image-rendering:pixelated}
+.card .cb{padding:10px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.card .id{font-family:var(--mono);font-size:13px;color:var(--muted)}
+.pts{font-family:var(--display);font-size:20px}
+.pts.pos{color:var(--gold)} .pts.neg{color:var(--red)} .pts.zero{color:var(--muted)}
+
+/* dialog */
+dialog{border:3px solid #6b3fb0;border-radius:20px;background:var(--bg2);color:var(--fg);padding:0;max-width:min(760px,calc(100vw - 32px));width:100%}
+dialog::backdrop{background:rgba(5,0,12,.75)}
+.dlg{display:grid;grid-template-columns:280px 1fr;gap:18px;padding:18px}
+.dlg img{width:100%;border-radius:12px;image-rendering:pixelated;background:#0b0314}
+.dlg h3{font-family:var(--display);font-weight:400;margin:0 0 6px;font-size:24px}
+.brk{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+.brk td{padding:6px 4px;border-bottom:1px solid var(--line)}
+.brk td:last-child{text-align:right;font-family:var(--mono);font-weight:700}
+.close{position:absolute;right:12px;top:10px}
+
+/* how / tiers / faq */
+.how{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.step{background:var(--panel);border:2px solid var(--line);border-radius:18px;padding:16px}
+.step .n{font-family:var(--display);color:var(--gold);font-size:28px}
+.tiers{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.tierbox{border-radius:16px;padding:14px;text-align:center;border:2px solid var(--line);background:var(--panel)}
+.tierbox .t{font-family:var(--display);font-size:16px}
+.tierbox .r{font-family:var(--mono);font-size:13px;color:var(--muted)}
+details{background:var(--panel);border:2px solid var(--line);border-radius:14px;padding:12px 16px;margin-bottom:10px}
+summary{cursor:pointer;font-weight:800}
+.contract{font-family:var(--mono);font-size:13px;word-break:break-all}
+footer{border-top:2px solid var(--line);margin-top:30px;padding-block:24px 40px;color:var(--muted);font-size:14px}
+.demo-badge{display:inline-block;background:var(--cyan);color:#001b22;font-weight:800;font-size:12px;padding:3px 8px;border-radius:6px;margin-left:8px}
+.spinner{display:inline-block;width:16px;height:16px;border:3px solid rgba(255,255,255,.25);border-top-color:#2a0d00;border-radius:50%;animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (max-width:900px){.hero{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}.how{grid-template-columns:1fr}.tiers{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:620px){.scorecard{grid-template-columns:1fr}.dlg{grid-template-columns:1fr}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.pts{font-size:16px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<div class="marquee" id="marquee" aria-hidden="true"></div>
+
+<header class="wrap">
+  <nav>
+    <a class="logo" href="#top"><span aria-hidden="true">🎰</span> MONSTER SPIN <b>777</b></a>
+    <div class="navlinks">
+      <a class="btn" href="#checker">Score Checker</a>
+      <a class="btn" href="#how">How Scoring Works</a>
+      <a class="btn gold" id="osLink" href="#" target="_blank" rel="noopener">View on OpenSea</a>
+    </div>
+  </nav>
+</header>
+
+<main id="top">
+  <section class="wrap hero">
+    <div>
+      <div class="eyebrow">Robinhood Chain · 7,777 prize piles</div>
+      <h1>777<span>Monster Spin Jackpot</span></h1>
+      <p class="lede">A hungry Monster Slot Machine spat out 7,777 prize piles. Every pile holds 7 items, and every item is worth points. Gold and gems push your score up. Junk and cursed loot drag it down. Check what you won.</p>
+      <div class="hero-ctas">
+        <a class="btn gold" href="#checker">Check my score</a>
+        <a class="btn" id="exLink" href="#" target="_blank" rel="noopener">Contract on explorer</a>
+      </div>
+    </div>
+    <div class="machine" aria-label="Slot machine showing the last score">
+      <div class="top">JACKPOT 777</div>
+      <div class="eyes"><div class="eye" id="eyeL"></div><div class="eye" id="eyeR"></div></div>
+      <div class="reels" id="reels">
+        <div class="reel"><div class="strip"></div></div>
+        <div class="reel"><div class="strip"></div></div>
+        <div class="reel"><div class="strip"></div></div>
+      </div>
+      <div class="teeth" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    </div>
+  </section>
+
+  <div class="wrap stats" id="stats">
+    <div class="stat"><div class="k">Supply</div><div class="v" id="stSupply">7,777</div></div>
+    <div class="stat"><div class="k">Holders</div><div class="v" id="stHolders">–</div></div>
+    <div class="stat"><div class="k">Chain</div><div class="v">Robinhood <small>ID 4663</small></div></div>
+    <div class="stat"><div class="k">Creator fee</div><div class="v">10%</div></div>
+  </div>
+
+  <section class="wrap" id="checker">
+    <h2>Score Checker</h2>
+    <p class="sub">Paste a wallet address to add up every Monster Spin NFT it holds, or look up a single token by its number. Scores are read live from the NFT metadata on Robinhood Chain, so they update as soon as NFTs move.</p>
+    <div class="checker">
+      <div class="tabs" role="tablist">
+        <button class="tab" role="tab" aria-selected="true" data-mode="wallet" id="tabWallet">Wallet</button>
+        <button class="tab" role="tab" aria-selected="false" data-mode="token" id="tabToken">Token #</button>
+      </div>
+      <form class="row" id="form">
+        <input id="q" autocomplete="off" spellcheck="false" placeholder="0x… wallet address" aria-label="Wallet address or token number">
+        <button class="btn gold" id="go" type="submit">SPIN</button>
+        <button class="btn" id="connect" type="button">Use my wallet</button>
+      </form>
+      <div class="hint" id="hint">Works with any wallet on Robinhood Chain. Nothing is signed and nothing leaves your browser except the public address.</div>
+      <div class="msg" id="msg" role="status"></div>
+
+      <div class="result" id="result">
+        <div class="scorecard">
+          <div>
+            <div class="meta-line" id="scoreLabel">Total score</div>
+            <div class="big pos" id="total">0</div>
+          </div>
+          <div>
+            <span class="tier" id="tier">–</span>
+            <div class="meta-line" id="who"></div>
+            <div class="kpis" id="kpis"></div>
+          </div>
+        </div>
+        <div class="toolbar">
+          <div class="meta-line" id="count"></div>
+          <label class="meta-line">Sort
+            <select id="sort">
+              <option value="desc">Highest score first</option>
+              <option value="asc">Lowest score first</option>
+              <option value="id">Token number</option>
+            </select>
+          </label>
+        </div>
+        <div class="grid" id="grid"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap" id="how">
+    <h2>How Scoring Works</h2>
+    <p class="sub">Every prize pile is an NFT with 7 items inside. Each item has a point value, and the pile's score is the sum of all 7. A wallet's score is the sum of every pile it holds.</p>
+    <div class="how">
+      <div class="step"><div class="n">01</div><b>Spin</b><p class="meta-line">The Monster Slot Machine spat out 7,777 piles during the Free Spin mint.</p></div>
+      <div class="step"><div class="n">02</div><b>Open the pile</b><p class="meta-line">Each pile reveals 7 items: gold, gems, junk or cursed loot.</p></div>
+      <div class="step"><div class="n">03</div><b>Add it up</b><p class="meta-line">Gold and gems add points. Junk and cursed loot subtract them. Hold more piles to stack your score.</p></div>
+    </div>
+    <h2 style="margin-top:30px;font-size:26px">Score tiers</h2>
+    <div class="tiers" id="tierList"></div>
+  </section>
+
+  <section class="wrap" id="faq">
+    <h2>FAQ</h2>
+    <details><summary>Where do the scores come from?</summary><p class="meta-line">From each NFT's own metadata on Robinhood Chain, read through the public Blockscout explorer. If the metadata includes a Score or Points value, that number is used. Otherwise the 7 item traits are scored using the collection's point table.</p></details>
+    <details><summary>Does my score update when I buy or sell?</summary><p class="meta-line">Yes. The checker reads current ownership every time you spin, so a pile you just bought counts right away and one you sold drops off.</p></details>
+    <details><summary>Do I need to connect a wallet?</summary><p class="meta-line">No. You can paste any address. "Use my wallet" only reads your address from MetaMask or another browser wallet. It never asks you to sign or send anything.</p></details>
+    <details><summary>Contract</summary><p class="contract" id="contractText"></p></details>
+  </section>
+</main>
+
+<dialog id="dlg">
+  <form method="dialog"><button class="btn close" aria-label="Close">✕</button></form>
+  <div class="dlg">
+    <img id="dImg" alt="">
+    <div>
+      <h3 id="dName"></h3>
+      <div class="meta-line" id="dSub"></div>
+      <table class="brk"><tbody id="dBrk"></tbody></table>
+      <div class="meta-line" id="dNote" style="margin-top:8px"></div>
+      <div class="row" style="margin-top:12px"><a class="btn" id="dOs" target="_blank" rel="noopener">OpenSea</a><a class="btn" id="dEx" target="_blank" rel="noopener">Explorer</a></div>
+    </div>
+  </div>
+</dialog>
+
+<footer class="wrap">
+  Monster Spin Jackpot 777 by PIXXEL777NFT · Robinhood Chain · Scores are for fun and community events and are not financial advice.
+</footer>
+
+<script>
+/* =====================================================================
+   CONFIG — edit this block to match your collection
+   ===================================================================== */
+const CONFIG = {
+  contract: "0xb0d12c2da01023bbe6d7b6d6e5e751e054eb403b",
+  openseaSlug: "monster-spin-jackpot-777",
+  openseaChain: "robinhood",
+  explorer: "https://robinhoodchain.blockscout.com",
+  proxy: "/api/bs",            // Vercel function (api/bs.js) used if the explorer blocks the browser
+
+  // 1) If an NFT has one of these traits with a number, that number IS the score.
+  scoreTraits: ["score", "total score", "points", "total points", "jackpot score"],
+
+  // 2) Otherwise each trait value is looked up here (case-insensitive). Put your real point table here.
+  //    Example: "Gold Coin": 50, "Rusty Can": -10
+  points: {
+    // "Gold Coin": 50,
+    // "Ruby": 120,
+    // "Rusty Can": -10,
+    // "Cursed Skull": -77,
+  },
+
+  // 3) Last resort: guess from words in the trait value (shown as "estimated").
+  keywords: [
+    [/jackpot|777/i, 777], [/diamond/i, 150], [/crown/i, 120], [/ruby|emerald|sapphire|gem|crystal/i, 80],
+    [/gold|treasure/i, 50], [/silver/i, 25], [/coin|chip|token/i, 10],
+    [/junk|trash|rusty|broken|banana|sock|bone/i, -10], [/curse|cursed|skull|hex|poison/i, -50],
+  ],
+  // traits that are never scored (descriptive only)
+  ignoreTraits: ["background", "rarity", "machine", "theme"],
+
+  tiers: [
+    { name: "JACKPOT",  min: 777,  color: "#ffc83d" },
+    { name: "BIG WIN",  min: 300,  color: "#3ef08a" },
+    { name: "WINNER",   min: 100,  color: "#41e2ff" },
+    { name: "SMALL WIN",min: 0,    color: "#c7b4e6" },
+    { name: "BUSTED",   min: -1e9, color: "#ff3b5c" },
+  ],
+};
+/* ===================================================================== */
+
+const $ = id => document.getElementById(id);
+const fmt = n => (n > 0 ? "+" : "") + Math.round(n).toLocaleString("en-US");
+const short = a => a.slice(0, 6) + "…" + a.slice(-4);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const osItem = id => `https://opensea.io/item/${CONFIG.openseaChain}/${CONFIG.contract}/${id}`;
+const exItem = id => `${CONFIG.explorer}/token/${CONFIG.contract}/instance/${id}`;
+const DEMO = new URLSearchParams(location.search).has("demo");
+
+$("osLink").href = `https://opensea.io/collection/${CONFIG.openseaSlug}`;
+$("exLink").href = `${CONFIG.explorer}/token/${CONFIG.contract}`;
+$("contractText").textContent = CONFIG.contract + " (Robinhood Chain, chain ID 4663)";
+
+/* ---------- marquee lights ---------- */
+(() => {
+  const m = $("marquee"); const n = Math.ceil(window.innerWidth / 20) + 4;
+  for (let i = 0; i < n; i++) m.insertAdjacentHTML("beforeend", '<i class="bulb"></i>');
+  const bulbs = [...m.children]; let k = 0;
+  const tick = () => { bulbs.forEach((b, i) => b.classList.toggle("on", (i + k) % 3 === 0)); k++; };
+  tick(); if (!matchMedia("(prefers-reduced-motion: reduce)").matches) setInterval(tick, 300);
+})();
+
+/* ---------- reels ---------- */
+function buildReels() {
+  document.querySelectorAll(".strip").forEach(s => {
+    s.innerHTML = Array.from({ length: 30 }, (_, i) => `<div>${["7","$","★","♦","☠","7"][i % 6]}</div>`).join("") + "<div>7</div>";
+    s.style.transition = "none";
+    s.style.transform = `translateY(-${30 * 110}px)`;
+  });
+}
+function spinReels(text) {
+  const chars = String(text).padStart(3, " ").slice(-3).split("");
+  document.querySelectorAll(".strip").forEach((s, i) => {
+    s.style.transition = "none"; s.style.transform = "translateY(0)";
+    s.lastElementChild.textContent = chars[i] === " " ? "7" : chars[i];
+    void s.offsetHeight;
+    s.style.transition = `transform ${1.1 + i * 0.35}s cubic-bezier(.2,.8,.2,1)`;
+    s.style.transform = `translateY(-${30 * 110}px)`;
+  });
+}
+buildReels();
+const eyeStyle = document.createElement("style");
+eyeStyle.textContent = ".machine .eye::after{transform:translate(var(--x,0),var(--y,0))}";
+document.head.appendChild(eyeStyle);
+document.addEventListener("pointermove", e => {
+  ["eyeL", "eyeR"].forEach(id => {
+    const el = $(id); const r = el.getBoundingClientRect();
+    const a = Math.atan2(e.clientY - (r.top + r.height / 2), e.clientX - (r.left + r.width / 2));
+    el.style.setProperty("--x", (Math.cos(a) * 6).toFixed(1) + "px");
+    el.style.setProperty("--y", (Math.sin(a) * 6).toFixed(1) + "px");
+  });
+});
+
+/* ---------- tiers ---------- */
+function tierOf(score) { return CONFIG.tiers.find(t => score >= t.min); }
+$("tierList").innerHTML = CONFIG.tiers.map((t, i) => {
+  const next = CONFIG.tiers[i - 1];
+  const range = t.min <= -1e8 ? "below 0" : next ? `${t.min} – ${next.min - 1}` : `${t.min}+`;
+  return `<div class="tierbox" style="border-color:${t.color}"><div class="t" style="color:${t.color}">${t.name}</div><div class="r">${range} pts</div></div>`;
+}).join("");
+
+/* ---------- data access (Blockscout API, falls back to Vercel proxy) ---------- */
+let useProxy = false;
+async function api(path, params = {}) {
+  const qs = new URLSearchParams(params).toString();
+  const direct = `${CONFIG.explorer}/${path}${qs ? "?" + qs : ""}`;
+  const viaProxy = `${CONFIG.proxy}?path=${encodeURIComponent(path)}${qs ? "&" + qs : ""}`;
+  for (const url of useProxy ? [viaProxy] : [direct, viaProxy]) {
+    try {
+      const r = await fetch(url, { headers: { accept: "application/json" } });
+      if (r.status === 404) return null;
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return await r.json();
+    } catch (e) {
+      if (url === direct) { useProxy = true; continue; }
+      throw e;
+    }
+  }
+}
+function normalize(inst) {
+  const md = inst.metadata || {};
+  let img = inst.image_url || md.image || md.image_url || "";
+  if (img.startsWith("ipfs://")) img = "https://ipfs.io/ipfs/" + img.slice(7);
+  return { id: String(inst.id ?? inst.token_id), name: md.name || `#${inst.id}`, image: img, attributes: Array.isArray(md.attributes) ? md.attributes : [], hasMeta: !!inst.metadata };
+}
+async function walletNFTs(addr) {
+  const out = []; let params = { holder_address_hash: addr };
+  for (let page = 0; page < 200; page++) {
+    const j = await api(`api/v2/tokens/${CONFIG.contract}/instances`, params);
+    if (!j) break;
+    for (const it of j.items || []) {
+      const owner = (it.owner?.hash || "").toLowerCase();
+      if (!owner || owner === addr.toLowerCase()) out.push(normalize(it));
+    }
+    if (!j.next_page_params) break;
+    params = { holder_address_hash: addr, ...j.next_page_params };
+  }
+  if (out.length) return out;
+  // fallback: list the wallet's NFTs and filter by contract
+  let p2 = { type: "ERC-721" };
+  for (let page = 0; page < 200; page++) {
+    const j = await api(`api/v2/addresses/${addr}/nft`, p2);
+    if (!j) break;
+    for (const it of j.items || []) {
+      const c = (it.token?.address_hash || it.token?.address || "").toLowerCase();
+      if (c === CONFIG.contract.toLowerCase()) out.push(normalize(it));
+    }
+    if (!j.next_page_params) break;
+    p2 = { type: "ERC-721", ...j.next_page_params };
+  }
+  return out;
+}
+async function tokenNFT(id) {
+  const j = await api(`api/v2/tokens/${CONFIG.contract}/instances/${id}`);
+  return j ? { ...normalize(j), owner: j.owner?.hash || "" } : null;
+}
+async function loadStats() {
+  try {
+    const j = await api(`api/v2/tokens/${CONFIG.contract}`);
+    if (j?.holders_count || j?.holders) $("stHolders").textContent = Number(j.holders_count ?? j.holders).toLocaleString("en-US");
+    if (j?.total_supply) $("stSupply").textContent = Number(j.total_supply).toLocaleString("en-US");
+  } catch {}
+}
+
+/* ---------- scoring ---------- */
+const POINTS = Object.fromEntries(Object.entries(CONFIG.points).map(([k, v]) => [k.toLowerCase().trim(), v]));
+function scoreNFT(nft) {
+  const attrs = nft.attributes;
+  const direct = attrs.find(a => CONFIG.scoreTraits.includes(String(a.trait_type || "").toLowerCase().trim()) && !isNaN(parseFloat(a.value)));
+  if (direct) return { score: parseFloat(direct.value), method: "metadata", rows: attrs.map(a => ({ t: a.trait_type, v: a.value, p: a === direct ? parseFloat(a.value) : null })) };
+  let score = 0, estimated = false, scored = 0; const rows = [];
+  for (const a of attrs) {
+    const t = String(a.trait_type || ""); const v = String(a.value ?? "");
+    if (CONFIG.ignoreTraits.includes(t.toLowerCase())) { rows.push({ t, v, p: null }); continue; }
+    let p = null;
+    if (/point|pts|score|value/i.test(t) && !isNaN(parseFloat(v))) p = parseFloat(v);
+    else if (POINTS[v.toLowerCase().trim()] !== undefined) p = POINTS[v.toLowerCase().trim()];
+    else {
+      const m = v.match(/([+-]\s?\d+)\s*(pts|points)?/i);
+      if (m) p = parseInt(m[1].replace(/\s/g, ""), 10);
+      else { for (const [re, val] of CONFIG.keywords) if (re.test(v)) { p = val; estimated = true; break; } }
+    }
+    if (p !== null) { score += p; scored++; }
+    rows.push({ t, v, p });
+  }
+  return { score, method: scored ? (estimated ? "estimated" : "table") : "none", rows };
+}
+
+/* ---------- UI ---------- */
+let mode = "wallet", current = [];
+function setMode(m) {
+  mode = m;
+  $("tabWallet").setAttribute("aria-selected", m === "wallet"); $("tabToken").setAttribute("aria-selected", m === "token");
+  $("q").placeholder = m === "wallet" ? "0x… wallet address" : "Token number, e.g. 777";
+  $("connect").hidden = m !== "wallet"; $("q").value = ""; $("q").focus();
+}
+$("tabWallet").onclick = () => setMode("wallet"); $("tabToken").onclick = () => setMode("token");
+function message(t, kind = "") { const m = $("msg"); m.textContent = t; m.className = "msg " + kind; m.style.display = t ? "block" : "none"; }
+
+$("connect").onclick = async () => {
+  if (!window.ethereum) { message("No browser wallet found. Paste your address instead.", "info"); return; }
+  try { const [a] = await window.ethereum.request({ method: "eth_requestAccounts" }); if (a) { $("q").value = a; $("form").requestSubmit(); } }
+  catch { message("Wallet connection was cancelled. You can paste your address instead.", "info"); }
+};
+
+$("form").onsubmit = async e => {
+  e.preventDefault();
+  const q = $("q").value.trim(); message("");
+  if (mode === "wallet" && !/^0x[0-9a-fA-F]{40}$/.test(q)) { message("That doesn't look like a wallet address. It should start with 0x and have 42 characters."); return; }
+  if (mode === "token" && !(/^\d+$/.test(q) && +q >= 0 && +q <= 99999)) { message("Enter a token number, for example 777."); return; }
+  const go = $("go"); go.disabled = true; go.innerHTML = '<span class="spinner"></span> SPINNING';
+  try {
+    let nfts;
+    if (DEMO) nfts = demoData(mode === "wallet" ? 9 : 1, q);
+    else if (mode === "wallet") nfts = await walletNFTs(q);
+    else { const n = await tokenNFT(q); nfts = n ? [n] : []; }
+    if (!nfts.length) {
+      $("result").style.display = "none";
+      message(mode === "wallet" ? "This wallet doesn't hold any Monster Spin NFTs right now." : `Token #${q} wasn't found. Check the number and try again.`, "info");
+    } else render(nfts, q);
+  } catch (err) {
+    message("Couldn't reach Robinhood Chain right now. Wait a moment and spin again.");
+    console.error(err);
+  } finally { go.disabled = false; go.textContent = "SPIN"; }
+};
+
+function render(nfts, q) {
+  current = nfts.map(n => ({ ...n, s: scoreNFT(n) }));
+  const total = current.reduce((a, n) => a + n.s.score, 0);
+  const t = tierOf(total);
+  $("total").textContent = fmt(total); $("total").className = "big " + (total < 0 ? "neg" : "pos");
+  $("scoreLabel").textContent = mode === "wallet" ? "Total wallet score" : "Pile score";
+  $("tier").textContent = t.name; $("tier").style.background = t.color; $("tier").style.color = "#1a0630";
+  $("who").innerHTML = mode === "wallet" ? `Wallet <b>${esc(short(q))}</b>` + (DEMO ? '<span class="demo-badge">DEMO DATA</span>' : "")
+                                         : `Token <b>#${esc(q)}</b>` + (current[0].owner ? ` · owner <b>${esc(short(current[0].owner))}</b>` : "") + (DEMO ? '<span class="demo-badge">DEMO DATA</span>' : "");
+  const best = current.reduce((a, n) => n.s.score > a.s.score ? n : a, current[0]);
+  const worst = current.reduce((a, n) => n.s.score < a.s.score ? n : a, current[0]);
+  const avg = total / current.length;
+  $("kpis").innerHTML = mode === "wallet"
+    ? `<div class="kpi">Piles <b>${current.length}</b></div><div class="kpi">Average <b>${fmt(avg)}</b></div><div class="kpi">Best <b>#${best.id} (${fmt(best.s.score)})</b></div><div class="kpi">Worst <b>#${worst.id} (${fmt(worst.s.score)})</b></div>`
+    : `<div class="kpi">Items scored <b>${current[0].s.rows.filter(r => r.p !== null).length}</b></div>`;
+  const methods = new Set(current.map(n => n.s.method));
+  $("count").textContent = `${current.length} pile${current.length > 1 ? "s" : ""}` +
+    (methods.has("estimated") ? " · some scores are estimated from item names (add your point table in CONFIG)" : "") +
+    (methods.has("none") ? " · some piles have no scorable items yet" : "");
+  spinReels(Math.abs(Math.round(total)) % 1000 === 777 ? "777" : String(Math.abs(Math.round(total))).slice(-3));
+  drawGrid(); $("result").style.display = "block";
+  $("result").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+}
+function drawGrid() {
+  const s = $("sort").value;
+  const list = [...current].sort((a, b) => s === "desc" ? b.s.score - a.s.score : s === "asc" ? a.s.score - b.s.score : a.id - b.id);
+  $("grid").innerHTML = list.map(n => {
+    const c = n.s.score > 0 ? "pos" : n.s.score < 0 ? "neg" : "zero";
+    return `<article class="card" tabindex="0" data-id="${esc(n.id)}"><img loading="lazy" src="${esc(n.image)}" alt="${esc(n.name)}"><div class="cb"><span class="id">#${esc(n.id)}</span><span class="pts ${c}">${fmt(n.s.score)}</span></div></article>`;
+  }).join("");
+}
+$("sort").onchange = drawGrid;
+$("grid").addEventListener("click", e => { const c = e.target.closest(".card"); if (c) openItem(c.dataset.id); });
+$("grid").addEventListener("keydown", e => { if (e.key === "Enter") { const c = e.target.closest(".card"); if (c) openItem(c.dataset.id); } });
+function openItem(id) {
+  const n = current.find(x => x.id === id); if (!n) return;
+  $("dImg").src = n.image; $("dImg").alt = n.name; $("dName").textContent = n.name;
+  $("dSub").innerHTML = `Score <b>${fmt(n.s.score)}</b> · ${tierOf(n.s.score).name}`;
+  $("dBrk").innerHTML = n.s.rows.map(r => `<tr><td>${esc(r.t)}</td><td>${esc(r.v)}</td><td>${r.p === null ? "–" : fmt(r.p)}</td></tr>`).join("") || '<tr><td colspan="3">No traits found in this NFT\'s metadata yet.</td></tr>';
+  $("dNote").textContent = n.s.method === "estimated" ? "Some points are estimated from item names." : n.s.method === "metadata" ? "Score taken directly from the NFT's metadata." : "";
+  $("dOs").href = osItem(n.id); $("dEx").href = exItem(n.id);
+  $("dlg").showModal();
+}
+
+/* ---------- demo data (open the site with ?demo to preview without chain access) ---------- */
+function demoData(k, q) {
+  const items = [["Gold Coin", 50], ["Ruby", 80], ["Rusty Can", -10], ["Cursed Skull", -50], ["Silver Chip", 25], ["Diamond", 150], ["Old Sock", -10], ["Treasure Chest", 50], ["777 Token", 777]];
+  const colors = ["#ffc83d", "#ff3b5c", "#41e2ff", "#3ef08a", "#c084fc"];
+  return Array.from({ length: k }, (_, i) => {
+    const id = mode === "token" ? q : String(100 + i * 37);
+    const attrs = Array.from({ length: 7 }, (_, j) => { const it = items[(i * 3 + j * 5) % items.length]; return { trait_type: `Item ${j + 1}`, value: it[0] }; });
+    const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' shape-rendering='crispEdges'><rect width='100' height='100' fill='${colors[i % 5]}'/><rect x='20' y='30' width='60' height='50' fill='#241040'/><rect x='30' y='45' width='12' height='12' fill='#fff'/><rect x='58' y='45' width='12' height='12' fill='#fff'/><text x='50' y='22' font-size='14' font-family='monospace' text-anchor='middle' fill='#241040'>DEMO #${id}</text></svg>`;
+    return { id, name: `Monster Spin #${id}`, image: "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg), attributes: attrs, hasMeta: true };
+  });
+}
+if (!DEMO) loadStats();
+</script>
+</body>
+</html>
