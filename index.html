@@ -276,6 +276,9 @@ const CONFIG = {
   openseaChain: "robinhood",
   explorer: "https://robinhoodchain.blockscout.com",
   proxy: "/api/bs",            // Vercel function (api/bs.js) used if the explorer blocks the browser
+  rpcs: ["https://robinhoodchain.blockscout.com/api/eth-rpc"],   // JSON-RPC used to read tokenURI (add your own RPC URL here if you have one)
+  rpcProxy: "/api/rpc",        // Vercel function fallback for RPC
+  metaProxy: "/api/meta",      // Vercel function fallback for metadata JSON
 
   // 1) If an NFT has one of these traits with a number, that number IS the score.
   scoreTraits: ["score", "total score", "points", "total points", "jackpot score"],
@@ -386,12 +389,90 @@ async function api(path, params = {}) {
     }
   }
 }
+const GATEWAYS = ["https://ipfs.io/ipfs/", "https://dweb.link/ipfs/", "https://gateway.pinata.cloud/ipfs/", "https://nftstorage.link/ipfs/"];
+function ipfsPath(u) {
+  if (!u) return "";
+  u = String(u).trim();
+  if (u.startsWith("ipfs://")) return u.slice(7).replace(/^ipfs\//, "");
+  const m = u.match(/\/ipfs\/(.+)$/); return m ? m[1] : "";
+}
+function gw(u, i = 0) {
+  if (!u) return "";
+  if (u.startsWith("ar://")) return "https://arweave.net/" + u.slice(5);
+  const p = ipfsPath(u); return p ? GATEWAYS[i % GATEWAYS.length] + p : u;
+}
+window.imgFail = img => {
+  const tries = +(img.dataset.try || 0) + 1; img.dataset.try = tries;
+  const src = img.dataset.src || "";
+  if (ipfsPath(src) && tries < GATEWAYS.length) { img.src = gw(src, tries); return; }
+  if (img.dataset.alt && img.src !== img.dataset.alt) { img.src = img.dataset.alt; return; }
+  img.onerror = null; img.style.opacity = .25;
+};
 function normalize(inst) {
   const md = inst.metadata || {};
-  let img = inst.image_url || md.image || md.image_url || "";
-  if (img.startsWith("ipfs://")) img = "https://ipfs.io/ipfs/" + img.slice(7);
-  return { id: String(inst.id ?? inst.token_id), name: md.name || `#${inst.id}`, image: img, attributes: Array.isArray(md.attributes) ? md.attributes : [], hasMeta: !!inst.metadata };
+  const raw = md.image || md.image_url || inst.image_url || "";
+  return { id: String(inst.id ?? inst.token_id), name: md.name || `#${inst.id}`, rawImage: raw, image: gw(raw), altImage: inst.image_url || "",
+           attributes: Array.isArray(md.attributes) ? md.attributes : [], fresh: false };
 }
+
+/* --- read tokenURI straight from the contract (explorer cache can be stale after reveal) --- */
+let rpcProxy = false;
+async function rpc(method, params) {
+  const body = JSON.stringify({ jsonrpc: "2.0", id: 1, method, params });
+  const urls = rpcProxy ? [CONFIG.rpcProxy] : [...CONFIG.rpcs, CONFIG.rpcProxy];
+  let last;
+  for (const url of urls) {
+    try {
+      const r = await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      const j = await r.json(); if (j.error) throw new Error(j.error.message || "rpc error");
+      if (url === CONFIG.rpcProxy) rpcProxy = true;
+      return j.result;
+    } catch (e) { last = e; }
+  }
+  throw last;
+}
+function decodeString(hex) {
+  const h = hex.startsWith("0x") ? hex.slice(2) : hex;
+  if (h.length < 128) return "";
+  const len = parseInt(h.slice(64, 128), 16);
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) bytes[i] = parseInt(h.substr(128 + i * 2, 2), 16);
+  return new TextDecoder().decode(bytes);
+}
+async function tokenURI(id) {
+  const data = "0xc87b56dd" + BigInt(id).toString(16).padStart(64, "0");
+  return decodeString(await rpc("eth_call", [{ to: CONFIG.contract, data }, "latest"]));
+}
+async function fetchJSON(uri) {
+  if (uri.startsWith("data:")) {
+    const [head, body] = uri.split(",", 2);
+    return JSON.parse(head.includes("base64") ? new TextDecoder().decode(Uint8Array.from(atob(body), c => c.charCodeAt(0))) : decodeURIComponent(body));
+  }
+  const cands = ipfsPath(uri) ? GATEWAYS.map((_, i) => gw(uri, i)) : [gw(uri)];
+  for (const u of cands) {
+    try { const r = await fetch(u, { cache: "no-store" }); if (r.ok) return await r.json(); } catch {}
+  }
+  const r = await fetch(`${CONFIG.metaProxy}?url=${encodeURIComponent(cands[0])}`);
+  if (!r.ok) throw new Error("meta " + r.status);
+  return await r.json();
+}
+const metaCache = new Map();
+async function freshen(nft) {
+  try {
+    let md = metaCache.get(nft.id);
+    if (!md) { md = await fetchJSON(await tokenURI(nft.id)); metaCache.set(nft.id, md); }
+    const raw = md.image || md.image_url || nft.rawImage;
+    return { ...nft, name: md.name || nft.name, rawImage: raw, image: gw(raw), attributes: Array.isArray(md.attributes) ? md.attributes : nft.attributes, fresh: true };
+  } catch (e) { console.warn("tokenURI failed for", nft.id, e); return nft; }
+}
+async function freshenAll(list, onProgress) {
+  const out = new Array(list.length); let i = 0, done = 0;
+  const worker = async () => { while (i < list.length) { const k = i++; out[k] = await freshen(list[k]); onProgress?.(++done, list.length); } };
+  await Promise.all(Array.from({ length: Math.min(6, list.length) }, worker));
+  return out;
+}
+
 async function walletNFTs(addr) {
   const out = []; let params = { holder_address_hash: addr };
   for (let page = 0; page < 200; page++) {
@@ -483,6 +564,12 @@ $("form").onsubmit = async e => {
     if (DEMO) nfts = demoData(mode === "wallet" ? 9 : 1, q);
     else if (mode === "wallet") nfts = await walletNFTs(q);
     else { const n = await tokenNFT(q); nfts = n ? [n] : []; }
+    if (!DEMO && nfts.length) {
+      go.innerHTML = `<span class="spinner"></span> OPENING 0/${nfts.length}`;
+      nfts = await freshenAll(nfts, (d, t) => { go.innerHTML = `<span class="spinner"></span> OPENING ${d}/${t}`; });
+      const stale = nfts.filter(n => !n.fresh).length;
+      if (stale) message(`${stale} pile${stale > 1 ? "s" : ""} couldn't be read from the contract, so ${stale > 1 ? "they show" : "it shows"} the explorer's cached data.`, "info");
+    }
     if (!nfts.length) {
       $("result").style.display = "none";
       message(mode === "wallet" ? "This wallet doesn't hold any Monster Spin NFTs right now." : `Token #${q} wasn't found. Check the number and try again.`, "info");
@@ -521,7 +608,7 @@ function drawGrid() {
   const list = [...current].sort((a, b) => s === "desc" ? b.s.score - a.s.score : s === "asc" ? a.s.score - b.s.score : a.id - b.id);
   $("grid").innerHTML = list.map(n => {
     const c = n.s.score > 0 ? "pos" : n.s.score < 0 ? "neg" : "zero";
-    return `<article class="card" tabindex="0" data-id="${esc(n.id)}"><img loading="lazy" src="${esc(n.image)}" alt="${esc(n.name)}"><div class="cb"><span class="id">#${esc(n.id)}</span><span class="pts ${c}">${fmt(n.s.score)}</span></div></article>`;
+    return `<article class="card" tabindex="0" data-id="${esc(n.id)}"><img loading="lazy" src="${esc(n.image)}" data-src="${esc(n.rawImage || n.image)}" data-alt="${esc(n.altImage || "")}" onerror="imgFail(this)" alt="${esc(n.name)}"><div class="cb"><span class="id">#${esc(n.id)}</span><span class="pts ${c}">${fmt(n.s.score)}</span></div></article>`;
   }).join("");
 }
 $("sort").onchange = drawGrid;
@@ -529,10 +616,10 @@ $("grid").addEventListener("click", e => { const c = e.target.closest(".card"); 
 $("grid").addEventListener("keydown", e => { if (e.key === "Enter") { const c = e.target.closest(".card"); if (c) openItem(c.dataset.id); } });
 function openItem(id) {
   const n = current.find(x => x.id === id); if (!n) return;
-  $("dImg").src = n.image; $("dImg").alt = n.name; $("dName").textContent = n.name;
+  const di = $("dImg"); di.dataset.try = 0; di.dataset.src = n.rawImage || n.image; di.dataset.alt = n.altImage || ""; di.onerror = () => imgFail(di); di.src = n.image; di.alt = n.name; $("dName").textContent = n.name;
   $("dSub").innerHTML = `Score <b>${fmt(n.s.score)}</b> · ${tierOf(n.s.score).name}`;
   $("dBrk").innerHTML = n.s.rows.map(r => `<tr><td>${esc(r.t)}</td><td>${esc(r.v)}</td><td>${r.p === null ? "–" : fmt(r.p)}</td></tr>`).join("") || '<tr><td colspan="3">No traits found in this NFT\'s metadata yet.</td></tr>';
-  $("dNote").textContent = n.s.method === "estimated" ? "Some points are estimated from item names." : n.s.method === "metadata" ? "Score taken directly from the NFT's metadata." : "";
+  $("dNote").textContent = (n.s.method === "estimated" ? "Some points are estimated from item names. " : n.s.method === "metadata" ? "Score taken directly from the NFT's metadata. " : n.s.method === "none" ? "No scorable items found in this NFT's metadata. " : "") + (n.fresh ? "Data read live from the contract." : "Data from the explorer's cache.");
   $("dOs").href = osItem(n.id); $("dEx").href = exItem(n.id);
   $("dlg").showModal();
 }
@@ -545,7 +632,7 @@ function demoData(k, q) {
     const id = mode === "token" ? q : String(100 + i * 37);
     const attrs = Array.from({ length: 7 }, (_, j) => { const it = items[(i * 3 + j * 5) % items.length]; return { trait_type: `Item ${j + 1}`, value: it[0] }; });
     const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' shape-rendering='crispEdges'><rect width='100' height='100' fill='${colors[i % 5]}'/><rect x='20' y='30' width='60' height='50' fill='#241040'/><rect x='30' y='45' width='12' height='12' fill='#fff'/><rect x='58' y='45' width='12' height='12' fill='#fff'/><text x='50' y='22' font-size='14' font-family='monospace' text-anchor='middle' fill='#241040'>DEMO #${id}</text></svg>`;
-    return { id, name: `Monster Spin #${id}`, image: "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg), attributes: attrs, hasMeta: true };
+    return { id, name: `Monster Spin #${id}`, image: "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg), attributes: attrs, fresh: true };
   });
 }
 if (!DEMO) loadStats();
